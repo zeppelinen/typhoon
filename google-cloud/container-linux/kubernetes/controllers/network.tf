@@ -1,11 +1,11 @@
 # Static IPv4 address for the Global TCP Load Balancer
-resource "google_compute_global_address" "controllers-ip" {
-  name = "${var.cluster_name}-controllers-ip"
+resource "google_compute_global_address" "apiserver-global-ip" {
+  name = "${var.cluster_name}-apiserver-ip"
   ip_version = "IPV4"
 }
 
 # DNS record for the Global TCP Load Balancer
-resource "google_dns_record_set" "controllers" {
+resource "google_dns_record_set" "apiservers" {
   # DNS Zone name where record should be created
   managed_zone = "${var.dns_zone_name}"
 
@@ -15,20 +15,20 @@ resource "google_dns_record_set" "controllers" {
   ttl  = 300
 
   # IPv4 address of controllers' network load balancer
-  rrdatas = ["${google_compute_global_address.controllers-ip.address}"]
+  rrdatas = ["${google_compute_global_address.apiserver-global-ip.address}"]
 }
 
 # Associate a global IP address to a target proxy
 resource "google_compute_global_forwarding_rule" "apiserver" {
   name = "${var.cluster_name}-apiserver"
   ip_protocol = "TCP"
-  ip_address = "${google_compute_global_address.controllers-ip.address}"
+  ip_address = "${google_compute_global_address.apiserver-global-ip.address}"
   port_range = "443"
-  target = "${google_compute_target_tcp_proxy.apiserver.self_link}"
+  target = "${google_compute_target_tcp_proxy.apiservers.self_link}"
 }
 
 # Global TCP Load Balancer (i.e. TCP target proxy)
-resource "google_compute_target_tcp_proxy" "apiserver" {
+resource "google_compute_target_tcp_proxy" "apiservers" {
   name = "${var.cluster_name}-apiserver"
   description = "Distribute TCP load across ${var.cluster_name} controllers"
   backend_service = "${google_compute_backend_service.apiserver.self_link}"
@@ -42,14 +42,18 @@ resource "google_compute_backend_service" "apiserver" {
   protocol = "TCP"
   port_name = "apiserver"
   session_affinity = "NONE"
+  timeout_sec = 3600
 
-  # Cannot use `count` with repeated fields so use 2 groups (some regions don't
-  # have more than 2 zonal instance groups)
+  # Cannot use `count` with repeated fields so use 3 groups (supported regions
+  # have 3 or more zonal instance groups)
   backend {
     group = "${google_compute_instance_group.controllers.0.self_link}"
   }
   backend {
     group = "${google_compute_instance_group.controllers.1.self_link}"
+  }
+  backend {
+    group = "${google_compute_instance_group.controllers.2.self_link}"
   }
 
   health_checks = ["${google_compute_health_check.apiserver.self_link}"]
@@ -57,9 +61,9 @@ resource "google_compute_backend_service" "apiserver" {
 
 # Organize instances into instance groups for use with backend services
 resource "google_compute_instance_group" "controllers" {
-  count = 2
+  count = 3
 
-  name = "${format("%s-controller-group-%s", var.cluster_name, element(data.google_compute_zones.all.names, count.index))}"
+  name = "${format("%s-controller-group-%d", var.cluster_name, count.index)}"
   zone = "${element(data.google_compute_zones.all.names, count.index)}"
 
   named_port {
@@ -67,7 +71,7 @@ resource "google_compute_instance_group" "controllers" {
     port = "443"
   }
 
-  # add instances in us-east1-a to cluster-controller-group-us-east1-a, etc.
+  # add instances in the zone to the controller-group for that zone
   instances = [
     "${matchkeys(google_compute_instance.controllers.*.self_link,
       google_compute_instance.controllers.*.zone,
@@ -86,8 +90,8 @@ resource "google_compute_health_check" "apiserver" {
   healthy_threshold = 1
   unhealthy_threshold = 4
 
-  tcp_health_check {
-    port  = "443"
+  ssl_health_check {
+    port  = 443
   }
 }
 

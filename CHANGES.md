@@ -13,10 +13,11 @@ Notable changes between versions.
 * Fix issue where multi-controller clusters could only bootstrap one controller
 when using regional network load balancers. Current work-around is to use a global
 TCP load balancer, which has the downsides of increasing time to bootstrap and
-capping controllers to automatically spanning 2 zones only.
+capping controllers to span 3 zones only.
 * Remove support for self-hosted etcd
 * Remove the `zone` required variable
 * Remove the `controller_preemptible` optional variable
+* Note: Region `asia-southeast1` is unsupported, it lacks regional managed instance groups.
 
 ## v1.8.2
 

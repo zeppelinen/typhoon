@@ -15,8 +15,8 @@ resource "google_dns_record_set" "etcds" {
 }
 
 # Zones in the region
-# Only the first 2 should be used. Backend services only accept a fixed number
-# of zonal instance groups and there exist regions with as few as 2 zones.
+# Only the first 3 should be used. Backend services only accept a fixed number
+# of zonal instance groups and supported regions have 3 or more zones.
 data "google_compute_zones" "all" {
   region = "${var.region}"
 }
@@ -26,7 +26,7 @@ resource "google_compute_instance" "controllers" {
   count = "${var.count}"
 
   name         = "${var.cluster_name}-controller-${count.index}"
-  zone         = "${element(slice(data.google_compute_zones.all.names, 0, 2), count.index)}"
+  zone         = "${element(slice(data.google_compute_zones.all.names, 0, 3), count.index)}"
   machine_type = "${var.machine_type}"
 
   metadata {
