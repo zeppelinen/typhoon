@@ -7,10 +7,13 @@ Notable changes between versions.
 #### Google Cloud
 
 * Add required variable `region` (e.g. "us-central1")
-* Reduce time to bootstrap a cluster
 * Change etcd to run on-host, across controllers (etcd-member.service)
 * Change controller instances to automatically span zones in the region
 * Change worker managed instance group to automatically span zones in the region
+* Fix issue where multi-controller clusters could only bootstrap one controller
+when using regional network load balancers. Current work-around is to use a global
+TCP load balancer, which has the downsides of increasing time to bootstrap and
+capping controllers to automatically spanning 2 zones only.
 * Remove support for self-hosted etcd
 * Remove the `zone` required variable
 * Remove the `controller_preemptible` optional variable
