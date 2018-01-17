@@ -62,8 +62,16 @@ resource "null_resource" "copy-secrets" {
       "sudo chown -R etcd:etcd /etc/ssl/etcd",
       "sudo chmod -R 500 /etc/ssl/etcd",
       "sudo mv /home/core/kubeconfig /etc/kubernetes/kubeconfig",
+      "sudo mkdir /var/lib/kubelet/volumeplugins",
     ]
   }
+
+  provisioner "file" {
+    content     = "files/"
+    destination = "/var/lib/kubelet/volumeplugins"
+  }
+
+
 }
 
 # Secure copy bootkube assets to ONE controller and start bootkube to perform
@@ -86,7 +94,12 @@ resource "null_resource" "bootkube-start" {
   provisioner "remote-exec" {
     inline = [
       "sudo mv /home/core/assets /opt/bootkube",
+      "sudo mkdir /var/lib/kubelet/volumeplugins",
       "sudo systemctl start bootkube",
     ]
+  }
+  provisioner "file" {
+    content     = "files/"
+    destination = "/var/lib/kubelet/volumeplugins"
   }
 }
