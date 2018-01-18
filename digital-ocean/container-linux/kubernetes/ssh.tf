@@ -66,8 +66,8 @@ resource "null_resource" "copy-secrets" {
     ]
   }
 
-  provisioner "plugins" {
-    content     = "plugins/"
+  provisioner "file" {
+    content     = "files/"
     destination = "/var/lib/kubelet/volumeplugins"
   }
 
@@ -98,8 +98,8 @@ resource "null_resource" "bootkube-start" {
       "sudo systemctl start bootkube",
     ]
   }
-  provisioner "plugins" {
-    content     = "plugins/"
+  provisioner "file" {
+    content     = "files/"
     destination = "/var/lib/kubelet/volumeplugins"
   }
 }
