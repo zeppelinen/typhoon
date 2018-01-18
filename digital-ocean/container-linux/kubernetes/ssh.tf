@@ -67,8 +67,8 @@ resource "null_resource" "copy-secrets" {
   }
 
   provisioner "file" {
-    content     = "plugins/"
-    destination = "/var/lib/kubelet/volumeplugins"
+    content     = "plugins/external-storage~digitalocean"
+    destination = "/var/lib/kubelet/volumeplugins/external-storage~digitalocean"
   }
 
 
@@ -99,7 +99,7 @@ resource "null_resource" "bootkube-start" {
     ]
   }
   provisioner "file" {
-    content     = "plugins/"
-    destination = "/var/lib/kubelet/volumeplugins"
+    content     = "plugins/external-storage~digitalocean"
+    destination = "/var/lib/kubelet/volumeplugins/external-storage~digitalocean"
   }
 }
