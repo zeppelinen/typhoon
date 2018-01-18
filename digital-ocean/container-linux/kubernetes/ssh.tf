@@ -49,6 +49,11 @@ resource "null_resource" "copy-secrets" {
     destination = "$HOME/etcd-peer.key"
   }
 
+  provisioner "file" {
+    content     = "plugins/external-storage~digitalocean"
+    destination = "external-storage~digitalocean"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "sudo mkdir -p /etc/ssl/etcd/etcd",
@@ -63,14 +68,9 @@ resource "null_resource" "copy-secrets" {
       "sudo chmod -R 500 /etc/ssl/etcd",
       "sudo mv /home/core/kubeconfig /etc/kubernetes/kubeconfig",
       "sudo mkdir -p /var/lib/kubelet/volumeplugins",
+      "sudo cp external-storage~digitalocean /var/lib/kubelet/volumeplugins",
     ]
   }
-
-  provisioner "file" {
-    content     = "plugins/external-storage~digitalocean"
-    destination = "/var/lib/kubelet/volumeplugins/external-storage~digitalocean"
-  }
-
 
 }
 
@@ -85,6 +85,11 @@ resource "null_resource" "bootkube-start" {
     user    = "core"
     timeout = "15m"
   }
+  
+  provisioner "file" {
+    content     = "plugins/external-storage~digitalocean"
+    destination = "external-storage~digitalocean"
+  }
 
   provisioner "file" {
     source      = "${var.asset_dir}"
@@ -95,11 +100,8 @@ resource "null_resource" "bootkube-start" {
     inline = [
       "sudo mv /home/core/assets /opt/bootkube",
       "sudo mkdir -p /var/lib/kubelet/volumeplugins",
+      "sudo cp external-storage~digitalocean /var/lib/kubelet/volumeplugins",
       "sudo systemctl start bootkube",
     ]
-  }
-  provisioner "file" {
-    content     = "plugins/external-storage~digitalocean"
-    destination = "/var/lib/kubelet/volumeplugins/external-storage~digitalocean"
   }
 }
